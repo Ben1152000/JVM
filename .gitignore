@@ -1,0 +1,4 @@
+bazel-*
+.private/
+.vscode/
+.DS_Store
