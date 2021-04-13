@@ -7,83 +7,96 @@ struct ParseError : public std::runtime_error {
       : runtime_error(std::to_string(location) + ": " + message) {}
 };
 
+struct Attribute {
+  uint16_t name_index; 
+  vector<uint8_t> bytes;
+};
+
 struct Constant {
   uint8_t tag;
 };
 
-struct UnicodeConstant : virtual Constant {
+struct UnicodeConstant : public Constant {
   string bytes;
 };
 
-struct IntegerConstant : virtual Constant {
+struct IntegerConstant : public Constant {
   uint32_t bytes;
 };
 
-struct FloatConstant : virtual Constant {
+struct FloatConstant : public Constant {
   uint32_t bytes;
 };
 
-struct LongConstant : virtual Constant {
+struct LongConstant : public Constant {
   uint64_t bytes;
 };
 
-struct DoubleConstant : virtual Constant {
+struct DoubleConstant : public Constant {
   uint64_t bytes;
 };
 
-struct ClassConstant : virtual Constant {
+struct ClassConstant : public Constant {
   uint16_t name_index;
 };
 
-struct StringConstant : virtual Constant {
+struct StringConstant : public Constant {
   uint16_t string_index;
 };
 
-struct FieldConstant : virtual Constant {
+struct FieldConstant : public Constant {
   uint16_t class_index;
   uint16_t variable_index;
 };
 
-struct MethodConstant : virtual Constant {
+struct MethodConstant : public Constant {
   uint16_t class_index;
   uint16_t variable_index;
 };
 
-struct InterfaceMethodConstant : virtual Constant {
+struct InterfaceMethodConstant : public Constant {
   uint16_t class_index;
   uint16_t variable_index;
 };
 
-struct VariableConstant : virtual Constant {
+struct VariableConstant : public Constant {
   uint16_t name_index;
   uint16_t type_index;
 };
 
-struct MethodHandleConstant : virtual Constant {
+struct MethodHandleConstant : public Constant {
   uint8_t reference_kind;
   uint16_t reference_index;
 };
 
-struct MethodTypeConstant : virtual Constant {
+struct MethodTypeConstant : public Constant {
   uint16_t type_index;
 };
 
-struct InvokeDynamicConstant : virtual Constant {
+struct InvokeDynamicConstant : public Constant {
   uint16_t method_attr_index;
   uint16_t variable_index;
 };
 
-struct Field {};
+struct Field {
+  uint16_t access_flags;
+  uint16_t name_index;
+  uint16_t type_index;
+  vector<Attribute> attributes;
+};
 
-struct Method {};
-
-struct Attribute {};
+struct Method {
+  uint16_t access_flags;
+  uint16_t name_index;
+  uint16_t type_index;
+  vector<Attribute> attributes;
+};
 
 struct Class {
   uint32_t magic_number;
   uint16_t minor_version;
   uint16_t major_version;
-  vector<Constant> constant_pool;
+  vector<u_ptr<Constant>> constant_pool;
   uint16_t access_flags;
   uint16_t this_class;
   uint16_t super_class;
@@ -96,6 +109,8 @@ struct Class {
 class Classfile {
  public:
   Classfile(string source) : main_class(ParseClass(source)) {}
+
+  friend ostream& operator<<(ostream& os, const Classfile& classfile);
 
  private:
   Class main_class;
@@ -110,7 +125,13 @@ class Classfile {
 
   static string ParseString(string& source, size_t length);
 
-  static Constant ParseConstant(string& source);
+  static Attribute ParseAttribute(string& source);
+
+  static u_ptr<Constant> ParseConstant(string& source);
+
+  static Field ParseField(string& source);
+
+  static Method ParseMethod(string& source);
 
   static Class ParseClass(string& source);
 };

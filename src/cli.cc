@@ -24,4 +24,5 @@ int main(int argc, char* argv[]) {
                   std::istreambuf_iterator<char>());
 
   Classfile classfile(data);
+  std::cout << classfile << std::endl;
 }

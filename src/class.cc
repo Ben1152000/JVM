@@ -2,6 +2,56 @@
 
 namespace JVM {
 
+ostream& operator<<(ostream& os, const Classfile& classfile) {
+  const Class& main = classfile.main_class;
+  os << "Major Version: " << main.major_version << std::endl;
+  os << "Minor Version: " << main.minor_version << std::endl;
+  os << "Constant Pool: " << std::endl;
+  for (int index = 1; index < main.constant_pool.size(); ++index) {
+    os << index << ':' << '\t'
+       << static_cast<uint32_t>(main.constant_pool[index]->tag);
+    switch (main.constant_pool[index]->tag) {
+      case 1: {
+        const auto& constant =
+            static_cast<const UnicodeConstant&>(*main.constant_pool[index]);
+        os << ' ' << '"' << constant.bytes << '"';
+        break;
+      }
+      case 3: {
+        const auto& constant =
+            static_cast<const IntegerConstant&>(*main.constant_pool[index]);
+        os << ' ' << constant.bytes << 'i';
+        break;
+      }
+      case 4: {
+        const auto& constant =
+            static_cast<const FloatConstant&>(*main.constant_pool[index]);
+        os << ' ' << constant.bytes << 'f';
+        break;
+      }
+      case 5: {
+        const auto& constant =
+            static_cast<const LongConstant&>(*main.constant_pool[index]);
+        os << ' ' << constant.bytes << 'L';
+        break;
+      }
+      case 6: {
+        const auto& constant =
+            static_cast<const DoubleConstant&>(*main.constant_pool[index]);
+        os << ' ' << constant.bytes << 'd';
+        break;
+      }
+      default:
+        break;
+    }
+    os << std::endl;
+  }
+  os << "Access Flags: " << main.access_flags << std::endl;
+  os << "Class: " << '#' << main.this_class << std::endl;
+  os << "Superclass: " << '#' << main.super_class << std::endl;
+  return os;
+}
+
 uint8_t Classfile::ParseByte(string& source) {
   if (source.empty()) throw ParseError();
   uint8_t byte = static_cast<uint8_t>(source.front());
@@ -28,104 +78,136 @@ string Classfile::ParseString(string& source, size_t length) {
   return result;
 }
 
-Constant Classfile::ParseConstant(string& source) {
+Attribute Classfile::ParseAttribute(string& source) {
+  Attribute attribute;
+  attribute.name_index = ParseShort(source);
+  uint32_t attribute_size = ParseInteger(source);
+  for (uint32_t index = 0; index < attribute_size; ++index) {
+    attribute.bytes.push_back(ParseByte(source));
+  }
+  return attribute;
+}
+
+u_ptr<Constant> Classfile::ParseConstant(string& source) {
   uint8_t tag = ParseByte(source);
-  std::cout << static_cast<int>(tag);
   switch (tag) {
     case 1: {
-      auto constant = UnicodeConstant();
-      constant.tag = tag;
-      constant.bytes = ParseString(source, ParseShort(source));
-      std::cout << " " << constant.bytes;
+      auto constant = make_unique<UnicodeConstant>();
+      constant->tag = tag;
+      constant->bytes = ParseString(source, ParseShort(source));
       return std::move(constant);
     }
     case 3: {
-      auto constant = IntegerConstant();
-      constant.tag = tag;
-      constant.bytes = ParseInteger(source);
+      auto constant = make_unique<IntegerConstant>();
+      constant->tag = tag;
+      constant->bytes = ParseInteger(source);
       return std::move(constant);
     }
     case 4: {
-      auto constant = FloatConstant();
-      constant.tag = tag;
-      constant.bytes = ParseInteger(source);
+      auto constant = make_unique<FloatConstant>();
+      constant->tag = tag;
+      constant->bytes = ParseInteger(source);
       return std::move(constant);
     }
     case 5: {
-      auto constant = LongConstant();
-      constant.tag = tag;
-      constant.bytes = ParseLong(source);
+      auto constant = make_unique<LongConstant>();
+      constant->tag = tag;
+      constant->bytes = ParseLong(source);
       return std::move(constant);
     }
     case 6: {
-      auto constant = DoubleConstant();
-      constant.tag = tag;
-      constant.bytes = ParseLong(source);
+      auto constant = make_unique<DoubleConstant>();
+      constant->tag = tag;
+      constant->bytes = ParseLong(source);
       return std::move(constant);
     }
     case 7: {
-      auto constant = ClassConstant();
-      constant.tag = tag;
-      constant.name_index = ParseShort(source);
+      auto constant = make_unique<ClassConstant>();
+      constant->tag = tag;
+      constant->name_index = ParseShort(source);
       return std::move(constant);
     }
     case 8: {
-      auto constant = StringConstant();
-      constant.tag = tag;
-      constant.string_index = ParseShort(source);
+      auto constant = make_unique<StringConstant>();
+      constant->tag = tag;
+      constant->string_index = ParseShort(source);
       return std::move(constant);
     }
     case 9: {
-      auto constant = FieldConstant();
-      constant.tag = tag;
-      constant.class_index = ParseShort(source);
-      constant.variable_index = ParseShort(source);
+      auto constant = make_unique<FieldConstant>();
+      constant->tag = tag;
+      constant->class_index = ParseShort(source);
+      constant->variable_index = ParseShort(source);
       return std::move(constant);
     }
     case 10: {
-      auto constant = MethodConstant();
-      constant.tag = tag;
-      constant.class_index = ParseShort(source);
-      constant.variable_index = ParseShort(source);
+      auto constant = make_unique<MethodConstant>();
+      constant->tag = tag;
+      constant->class_index = ParseShort(source);
+      constant->variable_index = ParseShort(source);
       return std::move(constant);
     }
     case 11: {
-      auto constant = InterfaceMethodConstant();
-      constant.tag = tag;
-      constant.class_index = ParseShort(source);
-      constant.variable_index = ParseShort(source);
+      auto constant = make_unique<InterfaceMethodConstant>();
+      constant->tag = tag;
+      constant->class_index = ParseShort(source);
+      constant->variable_index = ParseShort(source);
       return std::move(constant);
     }
     case 12: {
-      auto constant = VariableConstant();
-      constant.tag = tag;
-      constant.name_index = ParseShort(source);
-      constant.type_index = ParseShort(source);
+      auto constant = make_unique<VariableConstant>();
+      constant->tag = tag;
+      constant->name_index = ParseShort(source);
+      constant->type_index = ParseShort(source);
       return std::move(constant);
     }
     case 15: {
-      auto constant = MethodHandleConstant();
-      constant.tag = tag;
-      constant.reference_kind = ParseByte(source);
-      constant.reference_index = ParseShort(source);
+      auto constant = make_unique<MethodHandleConstant>();
+      constant->tag = tag;
+      constant->reference_kind = ParseByte(source);
+      constant->reference_index = ParseShort(source);
       return std::move(constant);
     }
     case 16: {
-      auto constant = MethodTypeConstant();
-      constant.tag = tag;
-      constant.type_index = ParseShort(source);
+      auto constant = make_unique<MethodTypeConstant>();
+      constant->tag = tag;
+      constant->type_index = ParseShort(source);
       return std::move(constant);
     }
     case 18: {
-      auto constant = InvokeDynamicConstant();
-      constant.tag = tag;
-      constant.method_attr_index = ParseShort(source);
-      constant.variable_index = ParseShort(source);
+      auto constant = make_unique<InvokeDynamicConstant>();
+      constant->tag = tag;
+      constant->method_attr_index = ParseShort(source);
+      constant->variable_index = ParseShort(source);
       return std::move(constant);
     }
     default:
       throw ParseError();
   }
+}
+
+Field Classfile::ParseField(string& source) {
+  Field field;
+  field.access_flags = ParseShort(source);
+  field.name_index = ParseShort(source);
+  field.type_index = ParseShort(source);
+  uint16_t attributes_count = ParseShort(source);
+  for (uint16_t index = 0; index < attributes_count; ++index) {
+    field.attributes.push_back(ParseAttribute(source));
+  }
+  return field;
+}
+
+Method Classfile::ParseMethod(string& source) {
+  Method method;
+  method.access_flags = ParseShort(source);
+  method.name_index = ParseShort(source);
+  method.type_index = ParseShort(source);
+  uint16_t attributes_count = ParseShort(source);
+  for (uint16_t index = 0; index < attributes_count; ++index) {
+    method.attributes.push_back(ParseAttribute(source));
+  }
+  return method;
 }
 
 Class Classfile::ParseClass(string& source) {
@@ -134,10 +216,32 @@ Class Classfile::ParseClass(string& source) {
   main_class.major_version = ParseShort(source);
   main_class.minor_version = ParseShort(source);
   uint16_t constant_pool_size = ParseShort(source);
+  auto constant = make_unique<Constant>();
+  constant->tag = 0;
+  main_class.constant_pool.push_back(std::move(constant));
   for (uint16_t index = 1; index < constant_pool_size; ++index) {
     main_class.constant_pool.push_back(ParseConstant(source));
-    std::cout << std::endl;
   }
+  main_class.access_flags = ParseShort(source);
+  main_class.this_class = ParseShort(source);
+  main_class.super_class = ParseShort(source);
+  uint16_t interfaces_count = ParseShort(source);
+  for (uint16_t index = 0; index < interfaces_count; ++index) {
+    main_class.interfaces.push_back(ParseShort(source));
+  }
+  uint16_t fields_count = ParseShort(source);
+  for (uint16_t index = 0; index < fields_count; ++index) {
+    main_class.fields.push_back(ParseField(source));
+  }
+  uint16_t methods_count = ParseShort(source);
+  for (uint16_t index = 0; index < methods_count; ++index) {
+    main_class.methods.push_back(ParseMethod(source));
+  }
+  uint16_t attributes_count = ParseShort(source);
+  for (uint16_t index = 0; index < attributes_count; ++index) {
+    main_class.attributes.push_back(ParseAttribute(source));
+  }
+  if (source.length() > 0) throw ParseError();
   return main_class;
 }
 

@@ -9,7 +9,9 @@ namespace {
 
 using namespace JVM;
 
-TEST(BasicTest, HelloWorld) { std::cout << "Hello, world" << std::endl; }
+TEST(BasicTest, HelloWorld) { 
+    std::cout << "Hello, world" << std::endl;
+}
 
 } // namespace
 
