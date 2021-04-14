@@ -67,7 +67,8 @@ ostream& operator<<(ostream& os, const Classfile& classfile) {
 }
 
 uint8_t Classfile::ParseByte(string& source) {
-  if (source.empty()) throw ParseError();
+  if (source.empty())
+    throw InvalidFormatError("The class file must not be truncated.");
   uint8_t byte = static_cast<uint8_t>(source.front());
   source.erase(0, 1);
   return byte;
@@ -196,7 +197,8 @@ u_ptr<Constant> Classfile::ParseConstant(string& source) {
       return std::move(constant);
     }
     default:
-      throw ParseError();
+      throw InvalidFormatError(
+          "The constant pool entry must have a valid tag.");
   }
 }
 
@@ -226,7 +228,9 @@ Method Classfile::ParseMethod(string& source) {
 
 Class Classfile::ParseClass(string& source) {
   Class main_class;
-  main_class.magic_number = ParseInteger(source);
+  uint32_t magic_number = ParseInteger(source);
+  if (magic_number != 0xcafebabe)
+    throw InvalidFormatError("The first four bytes must contain 0xCAFEBABE.");
   main_class.minor_version = ParseShort(source);
   main_class.major_version = ParseShort(source);
   uint16_t constant_pool_size = ParseShort(source);
@@ -255,7 +259,9 @@ Class Classfile::ParseClass(string& source) {
   for (uint16_t index = 0; index < attributes_count; ++index) {
     main_class.attributes.push_back(ParseAttribute(source));
   }
-  if (source.length() > 0) throw ParseError();
+  if (source.length() > 0)
+    throw InvalidFormatError(
+        "The class file must not have extra bytes at the end.");
   return main_class;
 }
 

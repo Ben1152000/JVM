@@ -1,7 +1,7 @@
-// Command line interface for the automata DSL
+// Command line interface for the JVM
 
-#include "utilities.h"
 #include "class.h"
+#include "utilities.h"
 
 using namespace JVM;
 
@@ -20,8 +20,8 @@ int main(int argc, char* argv[]) {
     std::cerr << "Unable to open file " << argv[1] << std::endl;
     exit(1);
   }
-  std::string data((std::istreambuf_iterator<char>(file)),
-                  std::istreambuf_iterator<char>());
+  string data((std::istreambuf_iterator<char>(file)),
+              std::istreambuf_iterator<char>());
 
   Classfile classfile(data);
   std::cout << classfile << std::endl;

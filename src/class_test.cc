@@ -9,8 +9,23 @@ namespace {
 
 using namespace JVM;
 
-TEST(BasicTest, HelloWorld) { 
-    std::cout << "Hello, world" << std::endl;
+const auto readfile = [](const string& filename) -> string {
+  std::ifstream file(filename);
+  EXPECT_TRUE(file.is_open());
+  return string((std::istreambuf_iterator<char>(file)),
+              std::istreambuf_iterator<char>());
+};
+
+TEST(ParserTests, Hello) { 
+  string data = readfile("test/Hello.class");
+  Classfile classfile(data);
+  std::cout << classfile << std::endl;
+}
+
+TEST(ParserTests, Simple) { 
+  string data = readfile("test/Simple.class");
+  Classfile classfile(data);
+  std::cout << classfile << std::endl;
 }
 
 } // namespace

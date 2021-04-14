@@ -23,6 +23,13 @@ cc_binary(
     ],
 )
 
+filegroup(
+    name = "classfiles",
+    testonly = 1,
+    srcs = glob(["test/*.class"]),
+    visibility = ["//visibility:public"],
+)
+
 cc_test(
     name = "class_test",
     srcs = ["class_test.cc"],
@@ -30,4 +37,5 @@ cc_test(
         ":utilities",
         ":class",
     ],
+    data = [":classfiles"],
 )

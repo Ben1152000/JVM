@@ -1,14 +1,16 @@
+#pragma once
+
 #include "utilities.h"
 
 namespace JVM {
 
-struct ParseError : public std::runtime_error {
-  ParseError(int location = 0, const string& message = "Parse Error")
-      : runtime_error(std::to_string(location) + ": " + message) {}
+struct InvalidFormatError : public std::runtime_error {
+  InvalidFormatError(const string& message)
+      : runtime_error("Format Error: " + message) {}
 };
 
 struct Attribute {
-  uint16_t name_index; 
+  uint16_t name_index;
   vector<uint8_t> bytes;
 };
 
@@ -93,7 +95,6 @@ struct Method {
 };
 
 struct Class {
-  uint32_t magic_number;
   uint16_t minor_version;
   uint16_t major_version;
   vector<u_ptr<Constant>> constant_pool;
@@ -108,6 +109,8 @@ struct Class {
 
 class Classfile {
  public:
+  // Parse the relevant class data from the class file source. Format checking
+  // is also performed to ensure that the class file is properly formed.
   Classfile(string source) : main_class(ParseClass(source)) {}
 
   friend ostream& operator<<(ostream& os, const Classfile& classfile);
