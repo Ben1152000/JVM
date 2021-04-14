@@ -4,8 +4,8 @@ namespace JVM {
 
 ostream& operator<<(ostream& os, const Classfile& classfile) {
   const Class& main = classfile.main_class;
-  os << "Major Version: " << main.major_version << std::endl;
   os << "Minor Version: " << main.minor_version << std::endl;
+  os << "Major Version: " << main.major_version << std::endl;
   os << "Constant Pool: " << std::endl;
   for (int index = 1; index < main.constant_pool.size(); ++index) {
     os << index << ':' << '\t'
@@ -14,31 +14,31 @@ ostream& operator<<(ostream& os, const Classfile& classfile) {
       case 1: {
         const auto& constant =
             static_cast<const UnicodeConstant&>(*main.constant_pool[index]);
-        os << ' ' << '"' << constant.bytes << '"';
+        os << '\t' << '"' << constant.bytes << '"';
         break;
       }
       case 3: {
         const auto& constant =
             static_cast<const IntegerConstant&>(*main.constant_pool[index]);
-        os << ' ' << constant.bytes << 'i';
+        os << '\t' << constant.bytes << 'i';
         break;
       }
       case 4: {
         const auto& constant =
             static_cast<const FloatConstant&>(*main.constant_pool[index]);
-        os << ' ' << constant.bytes << 'f';
+        os << '\t' << constant.bytes << 'f';
         break;
       }
       case 5: {
         const auto& constant =
             static_cast<const LongConstant&>(*main.constant_pool[index]);
-        os << ' ' << constant.bytes << 'L';
+        os << '\t' << constant.bytes << 'L';
         break;
       }
       case 6: {
         const auto& constant =
             static_cast<const DoubleConstant&>(*main.constant_pool[index]);
-        os << ' ' << constant.bytes << 'd';
+        os << '\t' << constant.bytes << 'd';
         break;
       }
       default:
@@ -49,6 +49,20 @@ ostream& operator<<(ostream& os, const Classfile& classfile) {
   os << "Access Flags: " << main.access_flags << std::endl;
   os << "Class: " << '#' << main.this_class << std::endl;
   os << "Superclass: " << '#' << main.super_class << std::endl;
+  os << "Fields: " << std::endl;
+  for (int index = 0; index < main.fields.size(); ++index) {
+    os << index << ':';
+    os << '\t' << '#' << main.fields[index].name_index;
+    os << '\t' << '#' << main.fields[index].type_index;
+    os << std::endl;
+  }
+  os << "Methods: " << std::endl;
+  for (int index = 0; index < main.methods.size(); ++index) {
+    os << index << ':';
+    os << '\t' << '#' << main.methods[index].name_index;
+    os << '\t' << '#' << main.methods[index].type_index;
+    os << std::endl;
+  }
   return os;
 }
 
@@ -213,8 +227,8 @@ Method Classfile::ParseMethod(string& source) {
 Class Classfile::ParseClass(string& source) {
   Class main_class;
   main_class.magic_number = ParseInteger(source);
-  main_class.major_version = ParseShort(source);
   main_class.minor_version = ParseShort(source);
+  main_class.major_version = ParseShort(source);
   uint16_t constant_pool_size = ParseShort(source);
   auto constant = make_unique<Constant>();
   constant->tag = 0;
