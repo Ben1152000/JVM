@@ -16,17 +16,17 @@ const auto readfile = [](const string& filename) -> string {
               std::istreambuf_iterator<char>());
 };
 
-TEST(ParserTests, Hello) { 
-  string data = readfile("test/Hello.class");
-  Classfile classfile(data);
-  std::cout << classfile << std::endl;
-}
+// TEST(ParserTests, Hello) { 
+//   string data = readfile("test/Hello.class");
+//   Classfile classfile(data);
+//   std::cout << classfile << std::endl;
+// }
 
-TEST(ParserTests, Simple) { 
-  string data = readfile("test/Simple.class");
-  Classfile classfile(data);
-  std::cout << classfile << std::endl;
-}
+// TEST(ParserTests, Simple) { 
+//   string data = readfile("test/Simple.class");
+//   Classfile classfile(data);
+//   std::cout << classfile << std::endl;
+// }
 
 } // namespace
 

@@ -23,6 +23,6 @@ int main(int argc, char* argv[]) {
   string data((std::istreambuf_iterator<char>(file)),
               std::istreambuf_iterator<char>());
 
-  Classfile classfile(data);
-  std::cout << classfile << std::endl;
+  Class main_class = ClassLoader::LoadClass(data);
+  std::cout << main_class << std::endl;
 }

@@ -15,7 +15,24 @@ struct Attribute {
 };
 
 struct Constant {
-  uint8_t tag;
+  enum class Type {
+    Empty = 0,
+    Unicode = 1,
+    Integer = 3,
+    Float = 4,
+    Long = 5,
+    Double = 6,
+    Class = 7,
+    String = 8,
+    Field = 9,
+    Method = 10,
+    InterfaceMethod = 11,
+    Variable = 12,
+    MethodHandle = 15,
+    MethodType = 16,
+    InvokeDynamic = 18,
+  };
+  Type tag;
 };
 
 struct UnicodeConstant : public Constant {
@@ -105,19 +122,18 @@ struct Class {
   vector<Field> fields;
   vector<Method> methods;
   vector<Attribute> attributes;
+
+ public:
+  friend ostream& operator<<(ostream& os, const Class& main);
 };
 
-class Classfile {
+class ClassLoader {
  public:
-  // Parse the relevant class data from the class file source. Format checking
-  // is also performed to ensure that the class file is properly formed.
-  Classfile(string source) : main_class(ParseClass(source)) {}
-
-  friend ostream& operator<<(ostream& os, const Classfile& classfile);
+  static Class LoadClass(const string& source) {
+    return ParseClass(*make_unique<string>(source));
+  }
 
  private:
-  Class main_class;
-
   static uint8_t ParseByte(string& source);
 
   static uint16_t ParseShort(string& source);
@@ -136,6 +152,8 @@ class Classfile {
 
   static Method ParseMethod(string& source);
 
+  // Parse the relevant class data from the class file source. Format checking
+  // is also performed to ensure that the class file is properly formed.
   static Class ParseClass(string& source);
 };
 
