@@ -1,6 +1,7 @@
 // Command line interface for the JVM
 
 #include "class.h"
+#include "loader.h"
 #include "utilities.h"
 
 using namespace JVM;

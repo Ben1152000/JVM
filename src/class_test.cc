@@ -3,6 +3,7 @@
 #include <glog/logging.h>
 #include <gtest/gtest.h>
 
+#include "loader.h"
 #include "utilities.h"
 
 namespace {
@@ -13,7 +14,7 @@ const auto readfile = [](const string& filename) -> string {
   std::ifstream file(filename);
   EXPECT_TRUE(file.is_open());
   return string((std::istreambuf_iterator<char>(file)),
-              std::istreambuf_iterator<char>());
+                std::istreambuf_iterator<char>());
 };
 
 TEST(ParserTests, Hello) {
@@ -28,10 +29,10 @@ TEST(ParserTests, Simple) {
   std::cout << main << std::endl;
 }
 
-} // namespace
+}  // namespace
 
-int main(int argc, char **argv) {
-    ::google::InitGoogleLogging(argv[0]);
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+int main(int argc, char** argv) {
+  ::google::InitGoogleLogging(argv[0]);
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

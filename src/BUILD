@@ -14,12 +14,34 @@ cc_library(
     deps = [":utilities"],
 )
 
+cc_library(
+    name = "parser",
+    srcs = ["parser.cc"],
+    hdrs = ["parser.h"],
+    deps = [
+        ":utilities",
+        ":class"
+    ],
+)
+
+cc_library(
+    name = "loader",
+    srcs = ["loader.cc"],
+    hdrs = ["loader.h"],
+    deps = [
+        ":utilities",
+        ":class",
+        ":parser",
+    ],
+)
+
 cc_binary(
     name = "cli",
     srcs = ["cli.cc"],
     deps = [
         ":utilities",
         ":class",
+        ":loader",
     ],
 )
 
@@ -29,6 +51,7 @@ cc_test(
     deps = [
         ":utilities",
         ":class",
+        ":loader",
     ],
     data = ["//test:data"],
 )

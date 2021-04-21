@@ -4,16 +4,6 @@
 
 namespace JVM {
 
-struct InvalidFormatError : public std::runtime_error {
-  InvalidFormatError(const string& message)
-      : runtime_error("Format Error: " + message) {}
-};
-
-struct Attribute {
-  uint16_t name_index;
-  vector<uint8_t> bytes;
-};
-
 struct Constant {
   enum class Type {
     Empty = 0,
@@ -33,6 +23,7 @@ struct Constant {
     InvokeDynamic = 18,
   };
   Type tag;
+  virtual ~Constant() {}  // Polymorphism!
 };
 
 struct UnicodeConstant : public Constant {
@@ -48,39 +39,51 @@ struct FloatConstant : public Constant {
 };
 
 struct LongConstant : public Constant {
-  uint64_t bytes;
+  uint32_t high_bytes;
+  uint32_t low_bytes;
 };
 
 struct DoubleConstant : public Constant {
-  uint64_t bytes;
-};
-
-struct ClassConstant : public Constant {
-  uint16_t name_index;
+  uint32_t high_bytes;
+  uint32_t low_bytes;
 };
 
 struct StringConstant : public Constant {
   uint16_t string_index;
+  shared_ptr<UnicodeConstant> string;
 };
 
-struct FieldConstant : public Constant {
-  uint16_t class_index;
-  uint16_t variable_index;
-};
-
-struct MethodConstant : public Constant {
-  uint16_t class_index;
-  uint16_t variable_index;
-};
-
-struct InterfaceMethodConstant : public Constant {
-  uint16_t class_index;
-  uint16_t variable_index;
+struct ClassConstant : public Constant {
+  uint16_t name_index;
+  shared_ptr<UnicodeConstant> name;
 };
 
 struct VariableConstant : public Constant {
   uint16_t name_index;
+  shared_ptr<UnicodeConstant> name;
   uint16_t type_index;
+  shared_ptr<UnicodeConstant> type;
+};
+
+struct FieldConstant : public Constant {
+  uint16_t class_index;
+  shared_ptr<ClassConstant> class_;
+  uint16_t variable_index;
+  shared_ptr<VariableConstant> variable;
+};
+
+struct MethodConstant : public Constant {
+  uint16_t class_index;
+  shared_ptr<ClassConstant> class_;
+  uint16_t variable_index;
+  shared_ptr<VariableConstant> variable;
+};
+
+struct InterfaceMethodConstant : public Constant {
+  uint16_t class_index;
+  shared_ptr<ClassConstant> class_;
+  uint16_t variable_index;
+  shared_ptr<VariableConstant> variable;
 };
 
 struct MethodHandleConstant : public Constant {
@@ -90,71 +93,85 @@ struct MethodHandleConstant : public Constant {
 
 struct MethodTypeConstant : public Constant {
   uint16_t type_index;
+  shared_ptr<UnicodeConstant> type;
 };
 
 struct InvokeDynamicConstant : public Constant {
   uint16_t method_attr_index;
   uint16_t variable_index;
+  shared_ptr<VariableConstant> variable;
+};
+
+struct Attribute {
+  uint16_t name_index;
+  shared_ptr<UnicodeConstant> name;
+  vector<uint8_t> bytes;
+  virtual ~Attribute() {}  // Polymorphism!
+};
+
+struct Exception {
+  uint16_t start_pc;
+  uint16_t end_pc;
+  uint16_t handler_pc;
+  uint16_t catch_type;
+};
+
+struct CodeAttribute : public Attribute {
+  uint16_t max_stack;
+  uint16_t max_locals;
+  vector<uint8_t> code;
+  vector<Exception> exception_table;
+  vector<Attribute> attributes;
+};
+
+struct LineNumber {
+  uint16_t start_pc;
+  uint16_t line_number;
+};
+
+struct LineNumberTableAttribute : public Attribute {
+  vector<LineNumber> table;
+};
+
+struct SourceFileAttribute : public Attribute {
+  uint16_t file_index;
+  shared_ptr<UnicodeConstant> file;
 };
 
 struct Field {
   uint16_t access_flags;
   uint16_t name_index;
+  shared_ptr<UnicodeConstant> name;
   uint16_t type_index;
-  vector<Attribute> attributes;
+  shared_ptr<UnicodeConstant> type;
+  vector<shared_ptr<Attribute>> attributes;
 };
 
 struct Method {
   uint16_t access_flags;
   uint16_t name_index;
+  shared_ptr<UnicodeConstant> name;
   uint16_t type_index;
-  vector<Attribute> attributes;
+  shared_ptr<UnicodeConstant> type;
+  vector<shared_ptr<Attribute>> attributes;
 };
 
 struct Class {
   uint16_t minor_version;
   uint16_t major_version;
-  vector<u_ptr<Constant>> constant_pool;
+  vector<shared_ptr<Constant>> constant_pool;
   uint16_t access_flags;
-  uint16_t this_class;
-  uint16_t super_class;
+  uint16_t this_class_index;
+  shared_ptr<ClassConstant> this_class;
+  uint16_t super_class_index;
+  shared_ptr<ClassConstant> super_class;
   vector<uint16_t> interfaces;
   vector<Field> fields;
   vector<Method> methods;
-  vector<Attribute> attributes;
+  vector<shared_ptr<Attribute>> attributes;
 
  public:
   friend ostream& operator<<(ostream& os, const Class& main);
-};
-
-class ClassLoader {
- public:
-  static Class LoadClass(const string& source) {
-    return ParseClass(*make_unique<string>(source));
-  }
-
- private:
-  static uint8_t ParseByte(string& source);
-
-  static uint16_t ParseShort(string& source);
-
-  static uint32_t ParseInteger(string& source);
-
-  static uint64_t ParseLong(string& source);
-
-  static string ParseString(string& source, size_t length);
-
-  static Attribute ParseAttribute(string& source);
-
-  static u_ptr<Constant> ParseConstant(string& source);
-
-  static Field ParseField(string& source);
-
-  static Method ParseMethod(string& source);
-
-  // Parse the relevant class data from the class file source. Format checking
-  // is also performed to ensure that the class file is properly formed.
-  static Class ParseClass(string& source);
 };
 
 }  // namespace JVM
